@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyric Finder</title>
+    <script src="API-project.js"></script>
+    <link rel="stylesheet" href="Api.css">
+</head>
+<body>
+    <h1> Song Lyrics!</h1>
+    <div id="input">
+    <p>Your Song title: <input type="text" id="title"></p>
+    <p>Your Artist: <input type="text" id="artist"></p>
+    <button id="get-lyrics">Get Lyrics</button>
+    </div>
+    <div id="lyrics">
+
+    <p>
+         </p>
+</div>
+
+    <h2> Credits</h2>
+    <ul>
+    <li>Song data from: <a href="https://lyricsovh.docs.apiary.io/#reference/0/lyrics-of-a-song/search?console=1" >Lyrics.ovh</a> </li>
+    </ul>
+</body>
+</html>
+
+
+// JavaScript//
+
+(function() {
+    'use strict';
+
+const express = require("express");
+const request = require("request-promise");
+const port = 3000;
+let app = express();
+
+function init(){
+  id('get-lyrics').addEventListener("click",lyrics);
+
+  const url = `https://api.lyrics.ovh/v1/Pantera/Walk'`;
+  fetch(url)
+            .then(statusCheck)
+            .then((response) => response.json())
+            .then(lyrics)
+            .catch(lyricsError);
+
+
+}
+
+function lyrics(response){
+const songLyrics = response.lyrics; 
+console.log(lyrics);
+}
+function lyricError(error){
+  console.log(error);
+}
+
+
+
+
+    /////////////////////////////////////////////////////////////////////
+    // Helper functions
+    /**
+    * Helper function to return the response's result text if successful, otherwise
+    * returns the rejected Promise result with an error status and corresponding text
+    * @param {object} res - response to check for success/error
+
+    * @return {object} - valid response if response was successful, otherwise rejected
+    *                    Promise result
+    */
+    async function statusCheck(res) {
+        if (!res.ok) {
+            throw new Error(await res.text());
+        }
+        return res;
+    }
+
+    function id(id) {
+        return document.getElementById(id);
+    }
+
+    function qs(selector) {
+        return document.querySelector(selector);
+    }
+
+    function qsa(selector) {
+        return document.querySelectorAll(selector);
+    }
+})();
+
+// CSS//
+
+body{
+    background-color: rgb(252, 210, 217);
+}
+#lyrics > p{
+    display: flex;
+    flex-wrap: wrap;
+    width: 600px;
+    line-height: 3em;
+
+}
