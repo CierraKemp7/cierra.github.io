@@ -1,0 +1,59 @@
+import org.w3c.dom.ls.LSOutput;
+
+public class Main {
+    public static void main(String[] args) {
+        BankAccount myAccount = new BankAccount(30000, 25738);
+        System.out.println("Account Number: #" + myAccount.getAccountNumber());
+        System.out.println("Initial Balance: $" + myAccount.getBalance());
+        myAccount.deposit(560);
+        myAccount.withdraw(20);
+        myAccount.withdraw(150);
+
+        BankAccount myOtherAccount = new BankAccount(200, 3452);
+        System.out.println("Account Number: #" + myOtherAccount.getAccountNumber());
+        System.out.println("Initial Balance: $" + myOtherAccount.getBalance());
+        myOtherAccount.deposit(320);
+        myOtherAccount.withdraw(12);
+    }
+}
+
+public class BankAccount{
+    private int accountNumber;
+    private double balance;
+    public BankAccount(){
+    }
+    public BankAccount(double balance, int accountNumber){
+        this.accountNumber= accountNumber;
+        this.balance= balance;
+    }
+
+    public int getAccountNumber(){
+        return accountNumber;
+    }
+
+    public void setAccountNumber(){
+        this.accountNumber= accountNumber;
+    }
+
+    public double getBalance(){
+        return balance;
+    }
+
+    public void deposit(double amount){
+        if (amount > 0) {
+            balance += amount;
+            System.out.println("Deposited $" + amount + ". New balance: $" + balance);
+        }
+    }
+
+    public void withdraw(double amount){
+        if(amount > 0 && balance >= amount) {
+            balance -= amount;
+            System.out.println("Withdrawn $" + amount + ". New balance: $" + balance);
+        }else{
+            System.out.println("Not enough funds.");
+        }
+    }
+
+
+}
