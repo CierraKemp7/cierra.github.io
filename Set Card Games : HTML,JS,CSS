@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<!--
+  HTML for SET! Card Game for CSE 154 HW2.
+  DO NOT MODIFY THIS HTML. MODIFICATIONS MAKE YOU INELIGIBLE FOR FULL CREDIT
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Set!</title>
+    <link rel="stylesheet" href="set.css" />
+    <script src="set.js"></script>
+  </head>
+
+  <body>
+    <header>
+      <h1>Set!</h1>
+    </header>
+
+    <main>
+      <section id="menu-view">
+        <article>
+          <h2>Choose a Timing Option:</h2>
+          <select>
+            <option value="60">1 Minute</option>
+            <option value="180" selected>3 Minutes</option>
+            <option value="300">5 Minutes</option>
+          </select>
+
+          <h2>Choose a Difficulty:</h2>
+          <p>
+            <label><input type="radio" name="diff" value="easy" checked /> Easy</label>
+            <label><input type="radio" name="diff" value="standard" /> Standard</label>
+          </p>
+
+          <button id="start-btn">Start</button>
+        </article>
+
+        <section>
+          <header>
+            <h2>Rules</h2>
+          </header>
+          <p>
+            Originally created by Marsha Jean Falco of Set Enterprises, Inc.,
+            Set is a card game with a board of non-duplicate cards. There are two levels
+            of difficulty for this game.
+            In Standard
+            Difficulty there are 4 different attributes (style, color, shape, and count) -
+            each attribute can have one of three values. For example, shape can have 3
+            values: "diamond", "oval", or "squiggle". In Easy Difficulty, all cards share a
+            "solid" style attribute, so only the other 3 attributes can be different.
+          </p>
+          <p>
+            A Set is a selection of 3 cards such that for each of attributes, all
+            three cards have the same value or none of the cards have the same value.
+            Your goal is to find as many Sets as you can on the board!
+          </p>
+          <p>
+            Selecting an incorrect set will cost -15 seconds in timed mode.
+            Sometimes there won't be sets left on the board - you can reshuffle
+            the board with a new collection of random cards.
+          </p>
+          <p>Have fun!</p>
+        </section>
+      </section>
+
+      <section id="game-view" class="hidden">
+        <div id="details-bar">
+          <button id="back-btn">Back to Main</button>
+          <p><strong>Sets Found: </strong><span id="set-count">0</span></p>
+          <p><strong>Time: </strong><span id="time">00:00</span></p>
+          <button id="refresh-btn">Refresh Board</button>
+        </div>
+        <div id="board"></div>
+      </section>
+    </main>
+  </body>
+</html>
+
+
+// JavaScript//
+
+(function() {
+    'use strict';
+
+    let remainingSeconds;
+    let timerId;
+    let attrs;
+    let timer;
+    window.addEventListener('load', init);
+
+    function init() {
+        document.getElementById("start-btn").addEventListener('click', toggleView);
+        document.getElementById("back-btn").addEventListener('click', toggleView);
+        document.getElementById("refresh-btn").addEventListener('click',refreshBoard);
+    }
+// Flips from game to Menu view
+    function toggleView() {
+        const menuView = document.getElementById('menu-view');
+        clearBoard();
+        clearInterval(timer);
+        const gameView = document.getElementById('game-view');
+        addcards();
+
+        menuView.classList.toggle('hidden');
+        gameView.classList.toggle('hidden');
+        startTimer();
+        
+    }
+
+// What dictates a set
+    function isASet(selected) {
+        let attributes = [];
+        for (let i = 0; i < selected.length; i++) {
+            attributes.push(selected[i].id.split("-"));
+        }
+        for (let i = 0; i < attributes[0].length; i++) {
+            let allSame = attributes[0][i] == attributes[1][i]&&
+                attributes[1][i] == attributes[2][i];
+            let allDiff = attributes[0][i] !== attributes[1][i]&&
+                attributes[1][i] !== attributes[2][i]&&
+                attributes[0][i] !== attributes[2][i];
+            if (!(allDiff || allSame)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Generates random attributes for the cards
+    function generateRandomAttributes(isEasy) {
+        const colors = ['red', 'green', 'purple'];
+        const fills = isEasy ? ['solid'] : ['solid', 'striped', 'outline'];
+        const shapes = ['oval', 'squiggle', 'diamond'];
+        const counts = [1, 2, 3];
+
+        const color = colors[Math.floor(Math.random() *colors.length)];
+        const fill = fills[Math.floor(Math.random() *fills.length)];
+        const shape = shapes[Math.floor(Math.random() *shapes.length)];
+        const count = counts[Math.floor(Math.random() *counts.length)];
+
+        return [color, fill, shape, count];
+    }
+// Makes sure every card is unique
+    function generateUniqueCard(isEasy) {
+        const board = document.getElementById('board');
+        let cardId;
+        let exists = true;
+        while (exists) {
+            attrs = generateRandomAttributes(isEasy);
+            cardId = attrs.join('-');
+            exists = !!document.getElementById(cardId); // check if card with ID already exists
+        }
+
+        const [color, fill, shape, count] = attrs;
+        const cardDiv = document.createElement('div');
+        cardDiv.classList.add('card');
+        cardDiv.id = cardId;
+        for (let i = 0; i < count; i++) {
+            const img = document.createElement('img');
+            img.src = `img/${color}-${fill}-${shape}.png`;
+            img.alt = `${color}-${fill}-${shape}-${count}`;
+            cardDiv.appendChild(img);
+        }
+
+        cardDiv.addEventListener('click', cardSelected);
+
+        return cardDiv;
+    }
+
+    
+    function addcards() {
+        let difficulty = qs('input').checked; 
+        let addTo = document.getElementById('board');
+        const numberOfCards = 6;  
+    for (let i = 0; i < numberOfCards; i++) {
+        addTo.appendChild(generateUniqueCard(difficulty));
+    }
+
+    
+    }
+
+
+    function clearBoard() {
+        let board = document.getElementById('board');
+        while (board.firstChild) {
+            board.removeChild(board.firstChild);
+        }
+    }
+
+    function refreshBoard(){
+        clearBoard();
+        addcards();
+    }
+    
+
+    function startTimer() {
+        remainingSeconds = qs('select').value;
+        timerId= id('time');
+        let min = remainingSeconds/60;
+        timerId.textContent= `${min}:00`;
+        timer = setInterval(advanceTimer, 1000);
+
+    }
+// Stops game if out of time
+    function advanceTimer() {
+        if (remainingSeconds <= 0) {
+            clearInterval(timerId);
+            disableBoard(); 
+            return;
+        }
+
+        remainingSeconds--;
+        updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+        const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, '0');
+        const seconds = String(remainingSeconds % 60).padStart(2, '0');
+        document.getElementById('time').textContent = `${minutes}:${seconds}`;
+    }
+
+    function disableBoard() {
+        document.querySelectorAll('.card').forEach(card => {
+            card.removeEventListener('click', cardSelected);
+        });
+    }
+
+    function cardSelected() {
+        const card = event.currentTarget;
+        card.classList.toggle('selected');
+        const selectedCards = Array.from(document.querySelectorAll('.card.selected'));
+
+        if (selectedCards.length == 3) {
+
+            // Temporarily disable all card clicks
+            document.querySelectorAll('.card').forEach((c) => c.removeEventListener('click', cardSelected));
+
+            // const attrs = selectedCards.map(card => card.id.split('-'));
+            const isValidSet = isASet(selectedCards); 
+            selectedCards.forEach(card => card.classList.remove('selected'));
+           
+            selectedCards.forEach(card =>{
+                card.classList.add('hide-imgs');
+                let message = document.createElement('p');
+                message.textContent = isValidSet ? 'SET!' : 'Not a Set :(';
+                card.appendChild(message);
+
+
+            });
+
+            if (isValidSet) {
+                // Valid
+                const setCount = document.getElementById('set-count');
+                setCount.textContent = parseInt(setCount.textContent, 10) + 1;
+
+                setTimeout(() => {
+                    selectedCards.forEach(card =>{
+                        let difficulty = qs('input').checked; 
+                        const newCard = generateUniqueCard(difficulty);
+                        card.replaceWith(newCard);
+                    });
+                    reenableCardListeners();
+                }, 1000);
+
+            } else {
+                // Takes more time off for cards chosen that are not a set
+                remainingSeconds = Math.max(0, remainingSeconds - 15);
+                updateTimerDisplay();
+
+                setTimeout(() => {
+                    selectedCards.forEach(card => {
+                        card.classList.remove('hide-imgs');
+                        const msg = card.querySelector('p');
+                        if (msg) msg.remove();
+                    });
+                    reenableCardListeners();
+                }, 1000);
+            }
+        }
+    }
+
+    // Utility to reenable card click listeners after a Set or Not a Set case
+    function reenableCardListeners() {
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', cardSelected);
+        });
+    }
+
+    /////////////////////////////////////////////////////////////////////
+    // Helper functions
+    function id(id) {
+        return document.getElementById(id);
+    }
+
+    function qs(selector) {
+        return document.querySelector(selector);
+    }
+
+    function qsa(selector) {
+        return document.querySelectorAll(selector);
+    }
+})();
+
+// CSS//
+body, button, select, input {
+  text-align: center;
+  font-size: 12pt;
+  font-family: Helvetica, Verdana, sans-serif;
+}
+
+main {
+  width: 80%;
+  margin: auto;
+}
+
+button, select {
+  padding: 8px;
+  background-color: white;
+  border: 2pt solid black;
+}
+
+h2 {
+  text-decoration: underline;
+  font-size: 16pt;
+  
+}
+
+#start-btn {
+  width: 100px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+#menu-view > article {
+  background-color: #6F77ED;
+  border-radius: 0.35em;
+  border: 5pt solid black;
+  color: white;
+}
+.hidden{
+  display: none;
+} 
+    #game-view{
+  justify-content: space-evenly;
+  align-items: center;
+  border-radius: 0.5em;
+}
+#details-bar{
+  display: flex;
+  justify-content: space-evenly;
+    align-items: center;
+background-color: black;
+  color: white;
+  font-size: 14pt;
+  }
+  
+  .card{  
+    display: flex; 
+    width: 220px;
+    height: 95px;
+    border: solid black 0.35em;
+    border-radius: 1em;
+    justify-content: space-evenly;
+    align-items: center;
+    margin-bottom: 5px;
+    margin-top: 5px;
+    
+
+  }
+  
+  .card > img{ 
+    height: 85%;
+    justify-content: space-evenly;
+    align-items: center;
+    cursor: pointer;
+  }
+  .selected{
+    box-shadow: 6px 6px;
+  }
+
+  .card>p{
+    font: bold;
+    font-size: 16pt;
+    text-align: center;
+    
+  }
+  .hide-imgs > img{
+    display: none;  
+  }
+  #board{
+    display: flex;
+    flex-wrap: wrap;
+    border-left: solid black 5pt;
+    border-right:solid black 5pt;
+    border-bottom: solid black 5pt;
+justify-content: space-evenly;
+    padding: 20px;
+  }
+  
+
