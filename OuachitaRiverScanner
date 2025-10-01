@@ -1,0 +1,93 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args)throws FileNotFoundException {
+        Scanner inputFile = new Scanner(new File("riverData.txt"));
+        inputFile.nextLine();
+        inputFile.nextLine();
+        LocalDateTime previousTime = null;
+
+
+        double max = Double.MIN_VALUE;
+        double min = Double.MAX_VALUE;
+        String maxDate= "";
+        String maxTime = "";
+        String minDate="";
+        String minTime = "";
+//        double previousLevel = -1;
+
+        while (inputFile.hasNextLine()) {
+            String input = inputFile.nextLine();
+            String[] data = input.split(",");
+  
+            // USE SUBSTRING//
+           String year=  data[1].substring(0,10);
+           String time= data[1].substring(11,19);
+  //                   String precip = data[5];
+           String timeStamp = data[1];
+           double level= Double.parseDouble(data[2]);
+  
+  
+            // Update max and min levels//
+            if (level > max) {
+                max = level;
+                maxDate= year;
+                maxTime = time;
+            }
+            if (level < min) {
+                min = level;
+                minDate=year;
+                minTime = time;
+            }
+  
+            //AVERAGES OF MONTHS//
+          Map<String,Double>totals=new HashMap<>();
+          Map<String,Integer>counts=new HashMap<>();
+            String date= data[1];
+            String month = date.substring(0,7);
+            if (!totals.containsKey(month)) {
+                totals.put(month,level);
+                counts.put(month,1);
+            } else {
+                totals.put(month, totals.get(month) + level);
+                counts.put(month, counts.get(month) + 1);
+            }
+            for (String months : totals.keySet()) {
+                double total = totals.get(months);
+                int count = counts.get(months);
+                double average = total/count;
+  
+                System.out.printf("%s Average Water Level: %.2f%n", months, average);
+
+                    }
+
+           //GAP DETECTION//
+     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+     LocalDateTime currentTime = LocalDateTime.parse(timeStamp, formatter);
+
+      if (previousTime != null){
+      long betweenHours = ChronoUnit.HOURS.between(previousTime, currentTime);
+     if (betweenHours > 1) {
+    LocalDateTime expectedTime = previousTime.plusHours(1);
+    String expectedFormatted = expectedTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH"));
+    String actualFormatted = currentTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH"));
+    System.out.println("Gap detected!  Expected " + expectedFormatted + "    Got " + actualFormatted);
+}
+                    }
+    previousTime = currentTime;
+
+    System.out.println("The max water level is: "+ max +" On: "+maxDate+ " At:"+ maxTime);
+    System.out.println("The minimum water level is: "+ min + " On: "+ minDate+ " At:"+ minTime);
+
+                }
+
+
+        }
+    }
